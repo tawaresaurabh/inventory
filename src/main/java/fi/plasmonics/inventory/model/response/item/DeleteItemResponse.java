@@ -1,9 +1,8 @@
-package fi.plasmonics.inventory.model.response.product;
+package fi.plasmonics.inventory.model.response.item;
 
 import fi.plasmonics.inventory.model.response.MessageType;
 
-public class ItemOrderActionResponse {
-
+public class DeleteItemResponse {
     private MessageType messageType;
     private String message;
 
@@ -23,8 +22,9 @@ public class ItemOrderActionResponse {
         this.message = message;
     }
 
-    public ItemOrderActionResponse(MessageType messageType, String message) {
+    public DeleteItemResponse(MessageType messageType, String message) {
         this.messageType = messageType;
         this.message = message;
     }
+
 }

@@ -1,6 +1,8 @@
-package fi.plasmonics.inventory.model.response.product;
+package fi.plasmonics.inventory.model.response.item;
 
 import java.util.Set;
+
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderModel;
 
 public class ItemDetailModel extends ItemModel{
     private Set<ItemOrderModel> itemOrderModels;

@@ -16,6 +16,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import fi.plasmonics.inventory.dto.ItemDetailDto;
@@ -27,16 +28,17 @@ import fi.plasmonics.inventory.entity.ItemOrder;
 import fi.plasmonics.inventory.entity.ItemOrderType;
 import fi.plasmonics.inventory.entity.UnitOfMeasure;
 import fi.plasmonics.inventory.eventpublishers.EventPublisher;
-import fi.plasmonics.inventory.model.request.product.CreateItem;
-import fi.plasmonics.inventory.model.request.product.CreateItemOrder;
-import fi.plasmonics.inventory.model.request.product.UpdateItem;
+import fi.plasmonics.inventory.exceptions.ItemNotFoundException;
+import fi.plasmonics.inventory.model.request.item.CreateItem;
+import fi.plasmonics.inventory.model.request.item.CreateItemOrder;
+import fi.plasmonics.inventory.model.request.item.UpdateItem;
 import fi.plasmonics.inventory.model.response.MessageType;
-import fi.plasmonics.inventory.model.response.product.DeleteItemResponse;
-import fi.plasmonics.inventory.model.response.product.ItemDetailModel;
-import fi.plasmonics.inventory.model.response.product.ItemModel;
-import fi.plasmonics.inventory.model.response.product.ItemOrderActionResponse;
-import fi.plasmonics.inventory.model.response.product.ItemOrderModel;
-import fi.plasmonics.inventory.model.response.product.ItemOrderResponse;
+import fi.plasmonics.inventory.model.response.item.DeleteItemResponse;
+import fi.plasmonics.inventory.model.response.item.ItemDetailModel;
+import fi.plasmonics.inventory.model.response.item.ItemModel;
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderActionResponse;
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderModel;
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderResponse;
 import fi.plasmonics.inventory.services.ItemOrderService;
 import fi.plasmonics.inventory.services.ItemService;
 
@@ -68,23 +70,30 @@ public class ItemsController {
     @GetMapping("/itemOrders/{itemId}")
     public ItemOrderResponse getItemOrders(@PathVariable String itemId) {
         ItemOrderResponse itemOrderResponse = new ItemOrderResponse();
-        Item item = itemService.getItemById(Long.parseLong(itemId));
-        List<ItemOrderModel> itemOrderModelList = item.getItemOrders().stream()
-                .sorted(Comparator.comparing(InventoryEntity::getCreateTime).reversed())
-                .map(inventoryProductEntry -> new ItemOrderDto(inventoryProductEntry).toModel())
-                .collect(Collectors.toList());
-        itemOrderResponse.setItemOrderList(itemOrderModelList);
+        Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(itemId));
+        if(itemOptional.isPresent()){
+            Item item = itemOptional.get();
+            List<ItemOrderModel> itemOrderModelList = item.getItemOrders().stream()
+                    .sorted(Comparator.comparing(InventoryEntity::getCreateTime).reversed())
+                    .map(inventoryProductEntry -> new ItemOrderDto(inventoryProductEntry).toModel())
+                    .collect(Collectors.toList());
+            itemOrderResponse.setItemOrderList(itemOrderModelList);
+        }
         return itemOrderResponse;
     }
 
 
     @PutMapping("/items")
     public Item updateItem(@RequestBody UpdateItem updateItem) {
-        Item item = itemService.getItemById(Long.parseLong(updateItem.getId()));
-        item.setName(updateItem.getName());
-        item.setUnitOfMeasure(Enum.valueOf(UnitOfMeasure.class, updateItem.getUnitOfMeasure()));
-        item.setDescription(updateItem.getDescription());
-        return itemService.save(item);
+        Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(updateItem.getId()));
+        if(itemOptional.isPresent()){
+            Item item = itemOptional.get();
+            item.setName(updateItem.getName());
+            item.setUnitOfMeasure(Enum.valueOf(UnitOfMeasure.class, updateItem.getUnitOfMeasure()));
+            item.setDescription(updateItem.getDescription());
+            return itemService.save(item);
+        }
+        throw new ItemNotFoundException();
     }
 
     @PostMapping("/items")
@@ -103,24 +112,27 @@ public class ItemsController {
     @PostMapping("/itemOrder")
     public ItemOrderActionResponse saveItemOrder(@RequestBody CreateItemOrder createItemOrder) {
         ItemOrder itemOrder = new ItemOrder();
-        Item item = itemService.getItemById(Long.parseLong(createItemOrder.getProductId()));
-        ItemModel itemModel = new ItemDto(item).toModel();
-        BigDecimal availableQuantity = new BigDecimal(itemModel.getAvailableQuantity());
-        BigDecimal outGoingQuantity = new BigDecimal(createItemOrder.getQuantity());
-        ItemOrderType itemOrderType = Enum.valueOf(ItemOrderType.class, createItemOrder.getAction());
+        Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(createItemOrder.getProductId()));
+        if(itemOptional.isPresent()){
+            Item item = itemOptional.get();
+            ItemModel itemModel = new ItemDto(item).toModel();
+            BigDecimal availableQuantity = new BigDecimal(itemModel.getAvailableQuantity());
+            BigDecimal outGoingQuantity = new BigDecimal(createItemOrder.getQuantity());
+            ItemOrderType itemOrderType = Enum.valueOf(ItemOrderType.class, createItemOrder.getAction());
 
-        if (itemOrderType.equals(ItemOrderType.INCOMING) || availableQuantity.compareTo(outGoingQuantity) >= 0) {
-            itemOrder.setItem(item);
-            itemOrder.setItemOrderType(itemOrderType);
-            itemOrder.setCreatedBy(createItemOrder.getEnteredBy());
-            itemOrder.setCreateTime(Timestamp.from(Instant.now()));
-            itemOrder.setQuantity(new BigDecimal(createItemOrder.getQuantity()));
-            itemOrderService.save(itemOrder,availableQuantity);
-            return new ItemOrderActionResponse(MessageType.SUCCESS, "Inventory updated");
-        } else {
-            return new ItemOrderActionResponse(MessageType.FAILURE, "Not enough units available, Please check available units");
+            if (itemOrderType.equals(ItemOrderType.INCOMING) || availableQuantity.compareTo(outGoingQuantity) >= 0) {
+                itemOrder.setItem(item);
+                itemOrder.setItemOrderType(itemOrderType);
+                itemOrder.setCreatedBy(createItemOrder.getEnteredBy());
+                itemOrder.setCreateTime(Timestamp.from(Instant.now()));
+                itemOrder.setQuantity(new BigDecimal(createItemOrder.getQuantity()));
+                itemOrderService.save(itemOrder,availableQuantity);
+                return new ItemOrderActionResponse(MessageType.SUCCESS, "Inventory updated");
+            } else {
+                return new ItemOrderActionResponse(MessageType.FAILURE, "Not enough units available, Please check available units");
+            }
         }
-
+        throw new ItemNotFoundException();
     }
 
 
@@ -134,17 +146,23 @@ public class ItemsController {
 
     @GetMapping("/items/{id}")
     public ItemModel getItemById(@PathVariable String id) {
-        Long itemId = Long.parseLong(id);
-        Item item = itemService.getItemById(itemId);
-        return new ItemDto(item).toModel();
+        Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(id));
+        if(itemOptional.isPresent()){
+            return new ItemDto(itemOptional.get()).toModel();
+        }else{
+            throw new ItemNotFoundException();
+        }
     }
 
 
     @GetMapping("/items/details/{id}")
     public ItemDetailModel getItemDetailsById(@PathVariable String id) {
-        Long itemId = Long.parseLong(id);
-        Item item = itemService.getItemById(itemId);
-        return new ItemDetailDto(item).toModel();
+        Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(id));
+        if(itemOptional.isPresent()){
+            return new ItemDetailDto(itemOptional.get()).toModel();
+        }else{
+            throw new ItemNotFoundException();
+        }
     }
 
 

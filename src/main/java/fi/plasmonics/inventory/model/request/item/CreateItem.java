@@ -1,4 +1,4 @@
-package fi.plasmonics.inventory.model.request.product;
+package fi.plasmonics.inventory.model.request.item;
 
 import java.io.Serializable;
 import java.util.List;

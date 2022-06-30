@@ -8,8 +8,8 @@ import java.util.Set;
 import fi.plasmonics.inventory.entity.Item;
 import fi.plasmonics.inventory.entity.ItemOrder;
 import fi.plasmonics.inventory.entity.ItemOrderType;
-import fi.plasmonics.inventory.model.response.product.ItemDetailModel;
-import fi.plasmonics.inventory.model.response.product.ItemOrderModel;
+import fi.plasmonics.inventory.model.response.item.ItemDetailModel;
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderModel;
 
 public class ItemDetailDto implements Serializable {
     private Item item;

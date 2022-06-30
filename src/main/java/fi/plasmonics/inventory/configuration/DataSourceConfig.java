@@ -9,9 +9,9 @@ import java.net.URISyntaxException;
 import javax.sql.DataSource;
 
 
-@Configuration
+//@Configuration
 public class DataSourceConfig {
-    @Bean
+   // @Bean
     public DataSource getDataSource() throws URISyntaxException {
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
 

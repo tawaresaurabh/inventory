@@ -1,6 +1,6 @@
 package fi.plasmonics.inventory.dto;
 import fi.plasmonics.inventory.entity.ItemOrder;
-import fi.plasmonics.inventory.model.response.product.ItemOrderModel;
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderModel;
 
 
 public class ItemOrderDto {

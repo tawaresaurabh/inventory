@@ -9,13 +9,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import fi.plasmonics.inventory.controllers.ItemsController;
 import fi.plasmonics.inventory.entity.Item;
 import fi.plasmonics.inventory.entity.ItemOrder;
-import fi.plasmonics.inventory.model.response.product.ItemModel;
-import fi.plasmonics.inventory.model.response.product.ItemOrderResponse;
+import fi.plasmonics.inventory.model.response.item.ItemModel;
+import fi.plasmonics.inventory.model.response.itemorder.ItemOrderResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -46,7 +47,7 @@ class ItemTests extends TestSetUp {
 
     @Test
     void checkGetItemById(){
-        when(itemService.getItemById(ITEM_ID)).thenReturn(item);
+        when(itemService.getItemById(ITEM_ID)).thenReturn(Optional.of(item));
         ItemModel itemModel = itemsController.getItemById(String.valueOf(ITEM_ID));
         assertEquals(ITEM_ID.toString(), itemModel.getId());
 
@@ -61,7 +62,7 @@ class ItemTests extends TestSetUp {
 
     @Test
     void checkGetItemOrder(){
-        when(itemService.getItemById(ITEM_ID)).thenReturn(item);
+        when(itemService.getItemById(ITEM_ID)).thenReturn(Optional.of(item));
         ItemOrderResponse itemOrderResponse = itemsController.getItemOrders(String.valueOf(ITEM_ID));
         assertEquals(2, itemOrderResponse.getItemOrderList().size());
     }

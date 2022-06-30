@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import fi.plasmonics.inventory.entity.Item;
 import fi.plasmonics.inventory.entity.ItemOrder;
 import fi.plasmonics.inventory.entity.ItemOrderType;
-import fi.plasmonics.inventory.model.response.product.ItemModel;
+import fi.plasmonics.inventory.model.response.item.ItemModel;
 
 public class ItemDto implements Serializable {
     private Item item;
