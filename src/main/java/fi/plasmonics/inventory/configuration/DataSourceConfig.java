@@ -1,18 +1,18 @@
 package fi.plasmonics.inventory.configuration;
 
+import javax.sql.DataSource;
+
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.net.URISyntaxException;
-
-import javax.sql.DataSource;
+import org.springframework.context.annotation.Profile;
 
 
-//@Configuration
+@Configuration
+@Profile("!local")
 public class DataSourceConfig {
-   // @Bean
-    public DataSource getDataSource() throws URISyntaxException {
+    @Bean
+    public DataSource getDataSource() {
         DataSourceBuilder dataSourceBuilder = DataSourceBuilder.create();
 
         String dbUrl = System.getenv("JDBC_DATABASE_URL");
