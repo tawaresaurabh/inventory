@@ -1,6 +1,8 @@
 package fi.plasmonics.inventory.services;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -9,15 +11,18 @@ import org.springframework.stereotype.Service;
 @Service("emailService")
 public class EmailService{
 
-    private static final String NOREPLY_ADDRESS = "tawaresaurabhopenload@gmail.com";
 
+    @Value("${no.reply.email}")
+    private String noReplyEmailAddress;
+
+    private Integer mailServerPort;
     @Autowired
     private JavaMailSender emailSender;
 
     public void sendSimpleMessage(String subject, String text, String[] to) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(NOREPLY_ADDRESS);
+            message.setFrom(StringUtils.firstNonEmpty(System.getenv("SPRING_MAIL_USERNAME"), noReplyEmailAddress));
             message.setTo(to);
             message.setSubject(subject);
             message.setText(text);
