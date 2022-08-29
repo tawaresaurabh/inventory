@@ -1,10 +1,9 @@
 package fi.plasmonics.inventory.model.request.registration;
 
-import java.io.Serializable;
-import java.util.Set;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import java.io.Serializable;
 
 @Getter
 @AllArgsConstructor
@@ -16,6 +15,6 @@ public class RegisterUser implements Serializable {
     private final String password;
     private final String email;
     private final String phoneNumber;
-    private final Set<String> roles;
+    private final String role;
 
 }

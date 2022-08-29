@@ -1,14 +1,15 @@
 package fi.plasmonics.inventory.authentication;
 
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import fi.plasmonics.inventory.entity.InventoryPrivilege;
 import fi.plasmonics.inventory.entity.InventoryRole;
 import fi.plasmonics.inventory.entity.InventoryUserAccount;
 
@@ -23,7 +24,7 @@ public class InventoryUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-       return getAuthorities(inventoryUserAccount.getInventoryRoles());
+       return getAuthorities(Collections.singleton(inventoryUserAccount.getInventoryRole()));
     }
 
     @Override
@@ -64,15 +65,9 @@ public class InventoryUserDetails implements UserDetails {
     }
 
     private List<String> getPrivileges(Collection<InventoryRole> roles) {
-
         List<String> privileges = new ArrayList<>();
-        List<InventoryPrivilege> collection = new ArrayList<>();
         for (InventoryRole role : roles) {
             privileges.add(role.getRoleName());
-            collection.addAll(role.getInventoryPrivileges());
-        }
-        for (InventoryPrivilege item : collection) {
-            privileges.add(item.getPrivilegeName());
         }
         return privileges;
     }

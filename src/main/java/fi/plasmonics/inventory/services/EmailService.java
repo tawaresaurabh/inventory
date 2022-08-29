@@ -14,8 +14,6 @@ public class EmailService{
 
     @Value("${no.reply.email}")
     private String noReplyEmailAddress;
-
-    private Integer mailServerPort;
     @Autowired
     private JavaMailSender emailSender;
 

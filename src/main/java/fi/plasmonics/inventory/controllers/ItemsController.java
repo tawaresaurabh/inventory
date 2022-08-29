@@ -1,33 +1,10 @@
 package fi.plasmonics.inventory.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
+import fi.plasmonics.inventory.configuration.OpenApiConfig;
 import fi.plasmonics.inventory.dto.ItemDetailDto;
 import fi.plasmonics.inventory.dto.ItemDto;
 import fi.plasmonics.inventory.dto.ItemOrderDto;
-import fi.plasmonics.inventory.entity.InventoryEntity;
-import fi.plasmonics.inventory.entity.Item;
-import fi.plasmonics.inventory.entity.ItemOrder;
-import fi.plasmonics.inventory.entity.ItemOrderType;
-import fi.plasmonics.inventory.entity.UnitOfMeasure;
-import fi.plasmonics.inventory.eventpublishers.EventPublisher;
+import fi.plasmonics.inventory.entity.*;
 import fi.plasmonics.inventory.exceptions.ItemNotFoundException;
 import fi.plasmonics.inventory.model.request.item.CreateItem;
 import fi.plasmonics.inventory.model.request.item.CreateItemOrder;
@@ -41,6 +18,24 @@ import fi.plasmonics.inventory.model.response.itemorder.ItemOrderModel;
 import fi.plasmonics.inventory.model.response.itemorder.ItemOrderResponse;
 import fi.plasmonics.inventory.services.ItemOrderService;
 import fi.plasmonics.inventory.services.ItemService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @CrossOrigin
@@ -55,11 +50,17 @@ public class ItemsController {
     @Autowired
     private ItemOrderService itemOrderService;
 
-    @Autowired
-    private EventPublisher eventPublisher;
 
 
-    @GetMapping("/items")
+    @GetMapping(path = "/items",produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    @Operation(summary = "List Items", tags = OpenApiConfig.TAG_ITEMS)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "OK", content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(schema = @Schema(implementation = ItemModel.class)))}),
+        @ApiResponse(responseCode = "404", description = "NotFound", content = @Content)
+    })
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER') or hasRole('ROLE_VIEWER')")
     public List<ItemModel> getItems() {
         return itemService.getItems().stream()
                 .map(item -> new ItemDto(item).toModel())
@@ -67,7 +68,15 @@ public class ItemsController {
     }
 
 
-    @GetMapping("/itemOrders/{itemId}")
+    @GetMapping(path = "/itemOrders/{itemId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    @Operation(summary = "Get Item orders by item Id", tags = OpenApiConfig.TAG_ITEM_ORDER)
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "NetworkElement", content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ItemOrderResponse.class))}),
+        @ApiResponse(responseCode = "404", description = "NotFound", content = @Content)
+    })
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER') or hasRole('ROLE_VIEWER')")
     public ItemOrderResponse getItemOrders(@PathVariable String itemId) {
         ItemOrderResponse itemOrderResponse = new ItemOrderResponse();
         Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(itemId));
@@ -84,6 +93,7 @@ public class ItemsController {
 
 
     @PutMapping("/items")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
     public Item updateItem(@RequestBody UpdateItem updateItem) {
         Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(updateItem.getId()));
         if(itemOptional.isPresent()){
@@ -97,6 +107,7 @@ public class ItemsController {
     }
 
     @PostMapping("/items")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
     public Item saveItem(@RequestBody CreateItem createItem) {
         Item item = new Item();
         item.setName(createItem.getName());
@@ -110,6 +121,7 @@ public class ItemsController {
 
 
     @PostMapping("/itemOrder")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
     public ItemOrderActionResponse saveItemOrder(@RequestBody CreateItemOrder createItemOrder) {
         ItemOrder itemOrder = new ItemOrder();
         Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(createItemOrder.getProductId()));
@@ -137,6 +149,7 @@ public class ItemsController {
 
 
     @DeleteMapping("/items/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
     public DeleteItemResponse deleteItem(@PathVariable String id) {
         Long itemId = Long.parseLong(id);
         itemService.delete(itemId);
@@ -145,6 +158,7 @@ public class ItemsController {
 
 
     @GetMapping("/items/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER') or hasRole('ROLE_VIEWER')")
     public ItemModel getItemById(@PathVariable String id) {
         Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(id));
         if(itemOptional.isPresent()){
@@ -156,6 +170,7 @@ public class ItemsController {
 
 
     @GetMapping("/items/details/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER') or hasRole('ROLE_VIEWER')")
     public ItemDetailModel getItemDetailsById(@PathVariable String id) {
         Optional<Item> itemOptional = itemService.getItemById(Long.parseLong(id));
         if(itemOptional.isPresent()){

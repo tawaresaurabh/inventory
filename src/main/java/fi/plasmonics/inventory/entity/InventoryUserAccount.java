@@ -1,19 +1,9 @@
 package fi.plasmonics.inventory.entity;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.persistence.*;
 
 @Entity
 @Table(name = "inventory_user_accounts")
@@ -35,7 +25,7 @@ public class InventoryUserAccount extends InventoryEntity {
 
 
 
-    @ManyToMany
+    @OneToOne
     @JoinTable(
             name = "inventory_users_roles",
             joinColumns = @JoinColumn(
@@ -43,7 +33,7 @@ public class InventoryUserAccount extends InventoryEntity {
             inverseJoinColumns = @JoinColumn(
                     name = "role_id", referencedColumnName = "id"))
 
-    private Collection<InventoryRole> inventoryRoles;
+    private InventoryRole inventoryRole;
 
     @OneToOne(mappedBy = "inventoryUserAccount")
     private InventoryUser inventoryUser;

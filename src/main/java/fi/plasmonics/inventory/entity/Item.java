@@ -35,9 +35,15 @@ public class Item extends InventoryEntity {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "item_purchase_link")
+    private String itemPurchaseLink;
 
     @Enumerated(EnumType.STRING)
     private UnitOfMeasure unitOfMeasure;
+
+    @Column(name = "unit_price")
+    private BigDecimal unitPrice;
+
 
 
     @OneToMany(

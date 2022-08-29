@@ -7,4 +7,5 @@ import fi.plasmonics.inventory.entity.InventoryUser;
 
 @Repository("inventoryUserRepository")
 public interface InventoryUserRepository extends JpaRepository<InventoryUser, Long> {
+
 }

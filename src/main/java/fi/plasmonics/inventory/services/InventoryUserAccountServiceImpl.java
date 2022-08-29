@@ -24,4 +24,5 @@ public class InventoryUserAccountServiceImpl implements UserDetailsService {
         Optional<InventoryUserAccount> inventoryUserOptional = inventoryUserAccountRepository.findByUserName(s);
         return inventoryUserOptional.map(InventoryUserDetails::new).orElseThrow(() -> new UsernameNotFoundException("Not found:" +  s));
     }
+
 }

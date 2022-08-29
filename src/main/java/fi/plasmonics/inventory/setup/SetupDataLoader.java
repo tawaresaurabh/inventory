@@ -1,48 +1,48 @@
 package fi.plasmonics.inventory.setup;
 
+import fi.plasmonics.inventory.entity.InventoryRole;
+import fi.plasmonics.inventory.entity.InventoryUser;
+import fi.plasmonics.inventory.entity.InventoryUserAccount;
+import fi.plasmonics.inventory.repo.InventoryUserAccountRepository;
+import fi.plasmonics.inventory.services.InventoryRoleService;
+import fi.plasmonics.inventory.services.InventoryUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
-import fi.plasmonics.inventory.entity.InventoryPrivilege;
-import fi.plasmonics.inventory.entity.InventoryRole;
-import fi.plasmonics.inventory.entity.InventoryUser;
-import fi.plasmonics.inventory.entity.InventoryUserAccount;
-import fi.plasmonics.inventory.services.InventoryPrivilegeService;
-import fi.plasmonics.inventory.services.InventoryRoleService;
-import fi.plasmonics.inventory.services.InventoryUserService;
-
 @Component
+@Profile("local")
 public class SetupDataLoader implements ApplicationListener<ContextRefreshedEvent> {
 
-    boolean alreadySetup = false;
 
-    @Autowired
-    private UserDetailsService inventoryUserDetailsService;
+    boolean alreadySetup = false;
 
     @Autowired
     private InventoryUserService inventoryUserService;
 
     @Autowired
-    private InventoryRoleService inventoryRoleService;
+    private InventoryUserAccountRepository inventoryUserAccountRepository;
+
 
     @Autowired
-    private InventoryPrivilegeService inventoryPrivilegeService;
+    private InventoryRoleService inventoryRoleService;
+
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    Optional<InventoryRole> adminRole;
+    Optional<InventoryRole> managerRole;
+    Optional<InventoryRole> viewerRole;
+
 
     @Override
     @Transactional
@@ -50,62 +50,66 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
 
         if (alreadySetup)
             return;
-        InventoryPrivilege readPrivilege
-                = createPrivilegeIfNotFound("READ_PRIVILEGE");
-        InventoryPrivilege writePrivilege
-                = createPrivilegeIfNotFound("WRITE_PRIVILEGE");
 
-        List<InventoryPrivilege> adminPrivileges = Arrays.asList(
-                readPrivilege, writePrivilege);
-        createRoleIfNotFound("ROLE_ADMIN", adminPrivileges);
-        createRoleIfNotFound("ROLE_USER", Arrays.asList(readPrivilege));
 
-        Optional<InventoryRole> adminRole = inventoryRoleService.getRoleByName("ROLE_ADMIN");
+        createRoleIfNotFound("ROLE_ADMIN");
+        createRoleIfNotFound("ROLE_MANAGER");
+        createRoleIfNotFound("ROLE_VIEWER");
 
-        InventoryUser inventoryUser = new InventoryUser();
-        inventoryUser.setFirstName("TEST");
-        inventoryUser.setLastName("TEST");
-        inventoryUser.setEmail("TEST@TEST.COM");
-        inventoryUser.setPhoneNumber("0000000000");
-        inventoryUser.setCreatedBy("SOMEONE");
-        inventoryUser.setCreateTime(Timestamp.from(Instant.now()));
-        InventoryUserAccount inventoryUserAccount = new InventoryUserAccount();
-        inventoryUserAccount.setUserName("TEST@TEST.COM");
-        inventoryUserAccount.setPassword(passwordEncoder.encode("PASS"));
-        inventoryUserAccount.setAccountNonExpired(true);
-        inventoryUserAccount.setAccountNonLocked(true);
-        inventoryUserAccount.setCredentialsNonExpired(true);
-        inventoryUserAccount.setEnabled(true);
-        inventoryUserAccount.setInventoryUser(inventoryUser);
-        inventoryUser.setInventoryUserAccount(inventoryUserAccount);
-        adminRole.ifPresent(inventoryRole -> inventoryUserAccount.setInventoryRoles(Collections.singleton(inventoryRole)));
-        inventoryUserService.save(inventoryUser);
+         adminRole = inventoryRoleService.getRoleByName("ROLE_ADMIN");
+         managerRole = inventoryRoleService.getRoleByName("ROLE_MANAGER");
+         viewerRole = inventoryRoleService.getRoleByName("ROLE_VIEWER");
+
+         createUserIfNotFound("ADMIN");
+         createUserIfNotFound("MANAGER");
+         createUserIfNotFound("VIEWER");
+
         alreadySetup = true;
     }
 
 
     @Transactional
-    InventoryPrivilege createPrivilegeIfNotFound(String name) {
-        Optional<InventoryPrivilege> privilegeOptional = inventoryPrivilegeService.getPrivilegeByName(name);
-        if (!privilegeOptional.isPresent()) {
-            InventoryPrivilege privilege = new InventoryPrivilege();
-            privilege.setPrivilegeName(name);
-            return inventoryPrivilegeService.save(privilege);
-        }else{
-            return privilegeOptional.get();
+    void createUserIfNotFound(String name) {
+        Optional<InventoryUserAccount> inventoryUserAccountOptional = inventoryUserAccountRepository.findByUserName(name+"@"+name+".COM");
+        if(inventoryUserAccountOptional.isEmpty()){
+            InventoryUser inventoryUser = new InventoryUser();
+            inventoryUser.setFirstName(name);
+            inventoryUser.setLastName(name);
+            inventoryUser.setEmail(name+"@"+name+".COM");
+            inventoryUser.setPhoneNumber("0000000000");
+            inventoryUser.setCreatedBy(name);
+            inventoryUser.setCreateTime(Timestamp.from(Instant.now()));
+            InventoryUserAccount inventoryUserAccount = new InventoryUserAccount();
+            inventoryUserAccount.setUserName(name+"@"+name+".COM");
+            inventoryUserAccount.setPassword(passwordEncoder.encode(name));
+            inventoryUserAccount.setAccountNonExpired(true);
+            inventoryUserAccount.setAccountNonLocked(true);
+            inventoryUserAccount.setCredentialsNonExpired(true);
+            inventoryUserAccount.setEnabled(true);
+            inventoryUserAccount.setInventoryUser(inventoryUser);
+            inventoryUser.setInventoryUserAccount(inventoryUserAccount);
+            if(name.equals("ADMIN")){
+                adminRole.ifPresent(inventoryUserAccount::setInventoryRole);
+            }
+            if(name.equals("MANAGER")){
+                managerRole.ifPresent(inventoryUserAccount::setInventoryRole);
+            }
+            if(name.equals("VIEWER")){
+                viewerRole.ifPresent(inventoryUserAccount::setInventoryRole);
+            }
+             inventoryUserService.save(inventoryUser);
         }
+
     }
 
+
+
     @Transactional
-    InventoryRole createRoleIfNotFound(
-            String name, Collection<InventoryPrivilege> privileges) {
-
+    InventoryRole createRoleIfNotFound(String name) {
         Optional<InventoryRole> roleOptional = inventoryRoleService.getRoleByName(name);
-
-        if (!roleOptional.isPresent()) {
+        if (roleOptional.isEmpty()) {
             InventoryRole inventoryRole = new InventoryRole();
             inventoryRole.setRoleName(name);
-            inventoryRole.setInventoryPrivileges(privileges);
             return inventoryRoleService.save(inventoryRole);
         }else{
             return roleOptional.get();

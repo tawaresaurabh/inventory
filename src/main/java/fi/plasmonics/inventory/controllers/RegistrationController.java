@@ -1,29 +1,23 @@
 package fi.plasmonics.inventory.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.Optional;
-
+import fi.plasmonics.inventory.entity.InventoryRole;
 import fi.plasmonics.inventory.entity.InventoryUser;
 import fi.plasmonics.inventory.entity.InventoryUserAccount;
 import fi.plasmonics.inventory.model.request.registration.RegisterUser;
 import fi.plasmonics.inventory.model.response.MessageType;
 import fi.plasmonics.inventory.services.InventoryUserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Optional;
 
 
 @CrossOrigin
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 public class RegistrationController {
 
     @Autowired
@@ -49,6 +43,10 @@ public class RegistrationController {
         inventoryUserAccount.setAccountNonLocked(true);
         inventoryUserAccount.setCredentialsNonExpired(true);
         inventoryUserAccount.setEnabled(false);
+        InventoryRole inventoryRole = new InventoryRole();
+        inventoryRole.setRoleName(registerUser.getRole());
+        inventoryRole.setInventoryUserAccount(inventoryUserAccount);
+        inventoryUserAccount.setInventoryRole(inventoryRole);
         inventoryUserAccount.setInventoryUser(inventoryUser);
         inventoryUser.setInventoryUserAccount(inventoryUserAccount);
          InventoryUser inventoryUser1 = inventoryUserService.save(inventoryUser);
@@ -61,7 +59,7 @@ public class RegistrationController {
 
     @PutMapping("/enable/{userId}")
     public MessageType enableInventoryUser(@PathVariable String userId) {
-        Optional<InventoryUser>inventoryUserOptional = inventoryUserService.getInventoryUser(Long.parseLong(userId));
+        Optional<InventoryUser> inventoryUserOptional = inventoryUserService.getInventoryUser(Long.parseLong(userId));
         if(inventoryUserOptional.isPresent()){
             InventoryUser inventoryUser= inventoryUserOptional.get();
             inventoryUser.getInventoryUserAccount().setEnabled(true);
