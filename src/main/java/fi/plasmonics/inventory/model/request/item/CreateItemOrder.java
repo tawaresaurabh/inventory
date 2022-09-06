@@ -11,6 +11,5 @@ public class CreateItemOrder implements Serializable {
     private final String productId;
     private final String quantity;
     private final String action;
-    private final String enteredBy;
 
 }

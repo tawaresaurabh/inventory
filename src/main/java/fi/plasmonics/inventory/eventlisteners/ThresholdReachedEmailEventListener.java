@@ -1,11 +1,13 @@
 package fi.plasmonics.inventory.eventlisteners;
 
+import freemarker.template.TemplateException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 
 
@@ -14,6 +16,8 @@ import fi.plasmonics.inventory.eventpublishers.EventPublisher;
 import fi.plasmonics.inventory.events.CheckThresholdReachedEvent;
 import fi.plasmonics.inventory.events.ThresholdReachedEmailEvent;
 import fi.plasmonics.inventory.services.EmailService;
+
+import javax.mail.MessagingException;
 
 @Component
 public class ThresholdReachedEmailEventListener {
@@ -26,12 +30,13 @@ public class ThresholdReachedEmailEventListener {
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onAfterCommitThresholdReached(ThresholdReachedEmailEvent thresholdReachedEmailEvent) {
+    public void onAfterCommitThresholdReached(ThresholdReachedEmailEvent thresholdReachedEmailEvent) throws MessagingException, TemplateException, IOException {
         String[] to = new String[thresholdReachedEmailEvent.getNotificationEmailIds().size()];
         for (int i = 0; i < thresholdReachedEmailEvent.getNotificationEmailIds().size(); i++) {
             to[i] = thresholdReachedEmailEvent.getNotificationEmailIds().get(i);
         }
-        emailService.sendSimpleMessage("Threshold alert", "Threshold reached for item " + thresholdReachedEmailEvent.getItemName() + "Threshold set at " + thresholdReachedEmailEvent.getThresholdQuantity() + "Current Available Qty " + thresholdReachedEmailEvent.getRemainingQuantity(), to);
+        emailService.sendTemplateEmail("Threshold alert", to , thresholdReachedEmailEvent);
+
 
     }
 

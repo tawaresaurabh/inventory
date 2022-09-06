@@ -1,5 +1,6 @@
 package fi.plasmonics.inventory.controllers;
 
+import fi.plasmonics.inventory.authentication.InventoryUserDetails;
 import fi.plasmonics.inventory.configuration.OpenApiConfig;
 import fi.plasmonics.inventory.dto.ItemDetailDto;
 import fi.plasmonics.inventory.dto.ItemDto;
@@ -24,9 +25,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -116,6 +120,15 @@ public class ItemsController {
         item.setCreateTime(Timestamp.from(Instant.now()));
         item.setThresholdQuantity(new BigDecimal(createItem.getThresholdQuantity()));
         item.setNotificationEmails(createItem.getNotificationEmails());
+        item.setItemPurchaseLink(createItem.getItemPurchaseLink());
+        if(StringUtils.isEmpty(createItem.getUnitPrice())){
+            item.setUnitPrice(BigDecimal.ZERO);
+        }else{
+            item.setUnitPrice(new BigDecimal(createItem.getUnitPrice()));
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        InventoryUserDetails inventoryUserDetails = (InventoryUserDetails)authentication.getPrincipal();
+        item.setCreatedBy(inventoryUserDetails.getUsername());
         return itemService.save(item);
     }
 
@@ -135,7 +148,9 @@ public class ItemsController {
             if (itemOrderType.equals(ItemOrderType.INCOMING) || availableQuantity.compareTo(outGoingQuantity) >= 0) {
                 itemOrder.setItem(item);
                 itemOrder.setItemOrderType(itemOrderType);
-                itemOrder.setCreatedBy(createItemOrder.getEnteredBy());
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                InventoryUserDetails inventoryUserDetails = (InventoryUserDetails)authentication.getPrincipal();
+                item.setCreatedBy(inventoryUserDetails.getUsername());
                 itemOrder.setCreateTime(Timestamp.from(Instant.now()));
                 itemOrder.setQuantity(new BigDecimal(createItemOrder.getQuantity()));
                 itemOrderService.save(itemOrder,availableQuantity);

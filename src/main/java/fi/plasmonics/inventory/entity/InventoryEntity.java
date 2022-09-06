@@ -3,20 +3,15 @@ package fi.plasmonics.inventory.entity;
 
 import java.sql.Timestamp;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
+import javax.persistence.*;
 
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity(name = "inventory_entity")
-@Inheritance(strategy = InheritanceType.JOINED)
+
 @Getter
 @Setter
+@MappedSuperclass
 public class InventoryEntity {
     @Id
     @GeneratedValue

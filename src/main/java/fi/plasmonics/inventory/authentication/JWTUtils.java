@@ -32,8 +32,8 @@ public class JWTUtils {
         InventoryUserDetails userPrincipal = (InventoryUserDetails) authentication.getPrincipal();
         Instant now = Instant.now();
         return Jwts.builder()
-            //.claim("name", "Jane Doe")
-            //.claim("email", "jane@example.com")
+            .claim("userName", userPrincipal.getUsername())
+            .claim("userRole", userPrincipal.getAuthorities())
             .setSubject(userPrincipal.getUsername())
             .setId(UUID.randomUUID().toString())
             .setIssuedAt(Date.from(now))

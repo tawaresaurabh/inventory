@@ -15,6 +15,8 @@ public class CreateItem implements Serializable {
     private final String unitOfMeasure;
     private final String description;
     private final String thresholdQuantity;
+    private final String itemPurchaseLink;
+    private final String unitPrice;
     private final List<String> notificationEmails;
 
 }
