@@ -14,7 +14,7 @@ import fi.plasmonics.inventory.entity.ItemOrderType;
 import fi.plasmonics.inventory.entity.UnitOfMeasure;
 import fi.plasmonics.inventory.services.ItemService;
 @ExtendWith(MockitoExtension.class)
-public class TestSetUp {
+public class InventoryTestUtil {
     public static final String TEST_USER = "TEST_USER";
 
 
@@ -32,7 +32,7 @@ public class TestSetUp {
 
 
 
-    protected Item createItem() {
+    public static Item createItem() {
         Item item = new Item();
         item.setId(ITEM_ID);
         item.setName(ITEM_NAME);
@@ -40,13 +40,14 @@ public class TestSetUp {
         item.setDescription(TEST_DESC);
         item.setCreateTime(Timestamp.from(Instant.now()));
         item.setCreatedBy(ITEM_CREATOR);
+        item.setThresholdQuantity(new BigDecimal(10));
         return item;
     }
 
 
 
 
-    protected ItemOrder createIncomingItemOrder() {
+    public static ItemOrder createIncomingItemOrder() {
         ItemOrder itemOrder = new ItemOrder();
         itemOrder.setItem(createItem());
         itemOrder.setItemOrderType(ItemOrderType.INCOMING);
@@ -57,7 +58,7 @@ public class TestSetUp {
         return itemOrder;
     }
 
-    protected ItemOrder createOutgoingItemOrder() {
+    public static ItemOrder createOutgoingItemOrder() {
         ItemOrder itemOrder = new ItemOrder();
         itemOrder.setItem(createItem());
         itemOrder.setItemOrderType(ItemOrderType.OUTGOING);

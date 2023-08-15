@@ -1,36 +1,64 @@
 package fi.plasmonics.inventory.advice;
 
 
-import io.jsonwebtoken.ExpiredJwtException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static fi.plasmonics.inventory.exceptions.ErrorType.MAX_COUNT_REACHED;
+import static fi.plasmonics.inventory.exceptions.ErrorType.NOT_FOUND;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import fi.plasmonics.inventory.exceptions.ApiError;
+import fi.plasmonics.inventory.exceptions.ErrorType;
+import fi.plasmonics.inventory.exceptions.InventoryException;
+import lombok.extern.slf4j.Slf4j;
+
 @ControllerAdvice
+@Slf4j
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
+    private int stackLen = 30;
 
-    @ExceptionHandler({ AccessDeniedException.class })
-    public ResponseEntity<Object> handleAccessDeniedException(
-            Exception ex, WebRequest request) {
-        return new ResponseEntity<Object>(
-                "The user does not have access to this resource", new HttpHeaders(), HttpStatus.FORBIDDEN);
+
+    @ExceptionHandler(value = {InventoryException.class})
+    protected ResponseEntity<Object> handleInventoryException(InventoryException ex, WebRequest request) {
+        var errorType = ex.getErrorType();
+        if (errorType.equals(MAX_COUNT_REACHED)) {
+            log.debug("Limitation verification failed. Details are {}", ex.getDetails());
+        } else if (errorType.equals(NOT_FOUND)) {
+            log.debug("not found happened . Details are {}", ex.getDetails());
+        } else {
+            log.warn("Error happened . Details are {}", ex.getDetails());
+        }
+        HttpStatus status = getHttpStatus(errorType);
+        if (HttpStatus.NOT_FOUND.equals(status)) {
+            final ApiError apiError = new ApiError(status, ex, 0);
+            return handleExceptionInternal(ex, apiError, new HttpHeaders(), status, request);
+        }
+        final ApiError apiError = new ApiError(status, ex, stackLen);
+        return handleExceptionInternal(ex, apiError, new HttpHeaders(), status, request);
     }
 
-    @ExceptionHandler({ ExpiredJwtException.class })
-    public ResponseEntity<Object> handleExpiredJwtException(
-            Exception ex, WebRequest request) {
-        logger.info("handling ExpiredJwtException");
-        return new ResponseEntity<Object>(
-                "The user is unauthorized because the authentication token has expired", new HttpHeaders(), HttpStatus.UNAUTHORIZED);
+    private HttpStatus getHttpStatus(ErrorType errorType) {
+        switch (errorType) {
+            case BAD_ARGUMENT:
+                return HttpStatus.BAD_REQUEST;
+            case EXISTING_DEPENDENCIES:
+            case DUPLICATE:
+                return HttpStatus.FORBIDDEN;
+            case NOT_FOUND:
+                return HttpStatus.NOT_FOUND;
+            case MAX_COUNT_REACHED:
+            case UNDER_MAINTENANCE:
+                return HttpStatus.CONFLICT;
+            case CONVERT:
+            default:
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
     }
 
 }

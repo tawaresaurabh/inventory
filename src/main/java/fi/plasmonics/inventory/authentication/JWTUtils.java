@@ -1,21 +1,28 @@
 package fi.plasmonics.inventory.authentication;
 
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.SignatureException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
+
+import javax.crypto.spec.SecretKeySpec;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 
 @Component
 public class JWTUtils {
@@ -27,21 +34,21 @@ public class JWTUtils {
     @Value("${plasmonics.backend.jwtExpirationMs}")
     private int jwtExpirationMs;
 
-    public String generateJwtToken(Authentication authentication) {
-
-        InventoryUserDetails userPrincipal = (InventoryUserDetails) authentication.getPrincipal();
-        Instant now = Instant.now();
-        return Jwts.builder()
-            .claim("userName", userPrincipal.getUsername())
-            .claim("userRole", userPrincipal.getAuthorities())
-            .setSubject(userPrincipal.getUsername())
-            .setId(UUID.randomUUID().toString())
-            .setIssuedAt(Date.from(now))
-            .setExpiration(Date.from(now.plus(jwtExpirationMs, ChronoUnit.MILLIS)))
-            .signWith(getSecretKey())
-            .compact();
-
-    }
+//    public String generateJwtToken(Authentication authentication) {
+//
+//        InventoryUserDetails userPrincipal = (InventoryUserDetails) authentication.getPrincipal();
+//        Instant now = Instant.now();
+//        return Jwts.builder()
+//            .claim("userName", userPrincipal.getUsername())
+//            .claim("userRole", userPrincipal.getAuthorities())
+//            .setSubject(userPrincipal.getUsername())
+//            .setId(UUID.randomUUID().toString())
+//            .setIssuedAt(Date.from(now))
+//            .setExpiration(Date.from(now.plus(jwtExpirationMs, ChronoUnit.MILLIS)))
+//            .signWith(getSecretKey())
+//            .compact();
+//
+//    }
 
     public  Jws<Claims> parseJwt(String jwtString) {
         return Jwts.parserBuilder()

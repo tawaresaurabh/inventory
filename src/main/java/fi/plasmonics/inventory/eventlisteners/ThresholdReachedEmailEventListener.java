@@ -16,8 +16,7 @@ import fi.plasmonics.inventory.eventpublishers.EventPublisher;
 import fi.plasmonics.inventory.events.CheckThresholdReachedEvent;
 import fi.plasmonics.inventory.events.ThresholdReachedEmailEvent;
 import fi.plasmonics.inventory.services.EmailService;
-
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 
 @Component
 public class ThresholdReachedEmailEventListener {
